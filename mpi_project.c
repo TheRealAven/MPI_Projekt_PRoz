@@ -57,7 +57,7 @@ void handleMessage(MPI_Status *msg_status, int shipIWant, int shipNumber){
 }
 
 void startLaneReserving(int whichShip, int planeNumber, int allPlanes){
-	int msg[SIZE_OF_MSG], planesLeft, receiver;
+	int msg[SIZE_OF_MSG], planesLeft, receiver, flag;
 	isLanding=1;
 	MPI_Status msg_status;
 	msg[0]=whichShip;
@@ -71,13 +71,15 @@ void startLaneReserving(int whichShip, int planeNumber, int allPlanes){
 	printf("%d oczekuje na pas %d \n", planeNumber, whichShip);
 	planesLeft=allPlanes;
 	while(planesLeft>0){
-		MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg_status);
+		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg_status);
 		//obsluga
-		if(msg_status.MPI_TAG==MSG_IS_FREE){
-			MPI_Recv(msg, SIZE_OF_MSG, MPI_INT, MPI_ANY_SOURCE, MSG_IS_FREE, MPI_COMM_WORLD, &msg_status);
-			planesLeft--;
-		}else{
-			handleMessage(&msg_status, -1, whichShip);
+		if(flag){
+			if(msg_status.MPI_TAG==MSG_IS_FREE){
+				MPI_Recv(msg, SIZE_OF_MSG, MPI_INT, MPI_ANY_SOURCE, MSG_IS_FREE, MPI_COMM_WORLD, &msg_status);
+				planesLeft--;
+			}else{
+				handleMessage(&msg_status, -1, whichShip);
+			}
 		}
 	}
 	printf("%d uzywa pasa na %d \n", planeNumber, whichShip);
@@ -88,7 +90,7 @@ int main( int argc, char **argv )
 {
 	int planeNumber, allPlanes;
 	int carrierCapacity[ALL_CARRIERS];
-	int shipIWant=-1, shipNumber=-1, msg[SIZE_OF_MSG], receiver, itLeft, canGo;
+	int shipIWant=-1, shipNumber=-1, msg[SIZE_OF_MSG], receiver, itLeft, canGo, flag;
 
 	srand(time(NULL));
 	MPI_Init( &argc, &argv );
@@ -116,10 +118,12 @@ int main( int argc, char **argv )
 		//Wait loop 1
 		while(itLeft>0){
 printf("test2\n");
-			MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg_status);
+			MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg_status);
 			//obsluga
 printf("test\n");
-			handleMessage(&msg_status, shipIWant, shipNumber);
+			if(flag){
+				handleMessage(&msg_status, shipIWant, shipNumber);
+			}
 			itLeft--;
 		}
 		//Ship choosing loop
@@ -134,13 +138,15 @@ printf("test\n");
 		}
 		canGo=0;
 		while(canGo<allPlanes-carrierCapacity[shipIWant]){
-			MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg_status);
+			MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg_status);
 			//obsluga
-			if(msg_status.MPI_TAG==MSG_FREE_PLACE){
-				MPI_Recv(msg, SIZE_OF_MSG, MPI_INT, MPI_ANY_SOURCE, MSG_FREE_PLACE, MPI_COMM_WORLD, &msg_status);
-				canGo++;
-			}else{
-				handleMessage(&msg_status, shipIWant, shipNumber);
+			if(flag){
+				if(msg_status.MPI_TAG==MSG_FREE_PLACE){
+					MPI_Recv(msg, SIZE_OF_MSG, MPI_INT, MPI_ANY_SOURCE, MSG_FREE_PLACE, MPI_COMM_WORLD, &msg_status);
+					canGo++;
+				}else{
+					handleMessage(&msg_status, shipIWant, shipNumber);
+				}
 			}
 		}
 		printf("%d znalazl miejsce na %d \n", planeNumber, shipNumber);
@@ -172,9 +178,11 @@ printf("test\n");
 		notifyWaitingPlanes();
 		itLeft = rand() % MAX_WAIT;
 		while(itLeft>0){
-			MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg_status);
+			MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg_status);
 			//obsluga
-			handleMessage(&msg_status, shipIWant, shipNumber);
+			if(flag){
+				handleMessage(&msg_status, shipIWant, shipNumber);
+			}
 			itLeft--;
 		}
 		//Landing loop again
