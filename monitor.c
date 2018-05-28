@@ -1,5 +1,6 @@
 #include "monitor.h"
 
+#include <stdlib.h>
 #include <stddef.h>
 
 // Todo remove this include after debug
@@ -13,6 +14,10 @@ static int processes_num;
 
 static MPI_Datatype packet_type;
 static MPI_Datatype message_type;
+
+static semaphore* sems;
+static int sems_no;
+
 
 static void init_message_structure(void);
 static void init_packet_structure(void);
@@ -31,10 +36,39 @@ void monitor_init(int* argc, char*** argv) {
 
 	init_structures();
 
+	sems = NULL;
+	sems_no = 0;
+
 	process_clock = 0;
 }
 
-void init_semaphores(int num, int* k) {
+static void clean_semaphores() {
+
+	int i;
+	for (i = 0; i < sems_no; ++i) {
+		semaphore* sem = &sems[i];
+
+		clear_list(&sem->awaiting);
+	}
+
+	free(sems);
+}
+
+void initialize_semaphores(int num, int* k) {
+
+	if (sems != NULL)
+		clean_semaphores();
+
+	sems = malloc(sizeof(semaphore) * num);
+	sems_no = num;
+
+	int i;
+	for (i = 0; i < num; ++i) {
+
+		sems[i].k = k[i];
+		sems[i].awaiting = empty_list();
+		sems[i].locked = 0;
+	}
 }
 
 // Todo change this method to static
@@ -54,7 +88,7 @@ message receive_message(void) {
 	return pckt.data;
 }
 
-void send_message(message msg) {
+void send_message(int receiver, message msg) {
 
 	process_clock = process_clock + 1;
 
@@ -65,19 +99,51 @@ void send_message(message msg) {
 	pckt.sender = process_rank;
 	pckt.data = msg;
 
-	int receiver = (process_rank + 1) % processes_num;
-
 	MPI_Send(&pckt, 1, packet_type, receiver, MSG_DEFAULT, MPI_COMM_WORLD);
 }
 
+static void broadcast_lock(int sem_id) {
+
+
+}
+
 void lock_semaphore(int sem_id) {
+
+	process_clock = process_clock + 1;
+	sems[sem_id].locked = process_clock;
+
+	message msg;
+	msg.message_type = MSG_LOCK;
+	msg.content[0] = sem_id;
+	msg.content[1] = process_clock;
+}
+
+static void allow_awaiting(int sem_id) {
+
+	list_element* it = sems[sem_id].awaiting.head;
+
+	while (it != NULL) {
+
+		message msg;
+		msg.message_type = MSG_ALLOW;
+		msg.content[0] = sem_id;
+		msg.content[1] = it->lock_clock;
+
+		send_message(it->process_rank, msg);
+	}
 }
 
 void unlock_semaphore(int sem_id) {
+
+	sems[sem_id].locked = 0;
+	allow_awaiting(sem_id);
 }
 
 void monitor_cleanup(void) {
 	MPI_Finalize();
+
+	if (sems != NULL)
+		clean_semaphores();
 }
 
 static void init_message_structure(void) {

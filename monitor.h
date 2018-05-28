@@ -3,6 +3,7 @@
 
 #include "mpi.h"
 #include "common.h"
+#include "list.h"
 
 #define MPI_CLOCK_TYPE MPI_UNSIGNED_LONG_LONG
 
@@ -15,12 +16,19 @@ typedef struct packet {
 	message data;
 } packet;
 
+typedef struct semaphore {
+	int k;
+	list awaiting;
+	int locked;
+
+} semaphore;
+
 
 void monitor_init(int* argc, char*** argv);
-void init_semaphores(int num, int* k);
+void initialize_semaphores(int num, int* k);
 
 message receive_message(void);
-void send_message(message msg);
+void send_message(int receiver, message msg);
 
 void lock_semaphore(int sem_id);
 void unlock_semaphore(int sem_id);

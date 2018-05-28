@@ -3,44 +3,31 @@
 #include "monitor.h"
 #include "common.h"
 
+#define CARRIERS_NUM 10
+
+void init_semaphores(void) {
+
+	int parking_spaces[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
+	int k[CARRIERS_NUM * 2];
+
+	int i;
+	for (i = 0; i < CARRIERS_NUM * 2; ++i) {
+
+		if (i < CARRIERS_NUM)
+			k[i] = parking_spaces[i];
+		else
+			k[i] = 1;
+	}
+
+	initialize_semaphores(CARRIERS_NUM * 2, k);
+}
 
 int main(int argc, char** argv) {
 
 	monitor_init(&argc, &argv);
+	init_semaphores();
 
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-	if (rank == 0) {
-
-		message msg;
-
-		msg.message_type = -1;
-		msg.content[0] = 1;
-		msg.content[1] = 0;
-
-		printf("%d is sending message:\n\ttype = %d\n\tcontent = (%d, %d)\n", rank, msg.message_type, msg.content[0], msg.content[1]);
-		send_message(msg);
-
-		message answer = receive_message();
-
-		printf("%d received answer:\n\ttype = %d, content(%d, %d)\n", rank, answer.message_type, answer.content[0], answer.content[1]);
-
-	} else {
-
-		message msg = receive_message();
-
-		if (rank == 5) {
-
-			msg.message_type = -2;
-			
-			int temp = msg.content[0];
-			msg.content[0] = msg.content[1];
-			msg.content[1] = temp;
-		}
-
-		send_message(msg);
-	}
+	// Todo simulation
 
 	monitor_cleanup();
 
