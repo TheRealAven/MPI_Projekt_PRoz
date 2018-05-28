@@ -4,25 +4,27 @@
 #include "mpi.h"
 #include "common.h"
 
+#define MPI_CLOCK_TYPE MPI_UNSIGNED_LONG_LONG
 
 typedef unsigned long long scalar_clock_t;
 
+
 typedef struct packet {
-	int message[SIZE_OF_MSG];
 	scalar_clock_t clock;
-} message;
+	int sender;
+	message data;
+} packet;
 
 
-typedef struct monitor_state {
-	scalar_clock_t clock;
-} monitor_state;
+void monitor_init(int* argc, char*** argv);
+void init_semaphores(int num, int* k);
 
+message receive_message(void);
+void send_message(message msg);
 
-static monitor_state state;
+void lock_semaphore(int sem_id);
+void unlock_semaphore(int sem_id);
 
-
-
-void init(void);
-
+void monitor_cleanup(void);
 
 #endif // __MESSAGING_HEADER

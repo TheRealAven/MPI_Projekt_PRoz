@@ -1,8 +1,16 @@
 #ifndef __COMMON_HEADER
 #define __COMMON_HEADER
 
+
+#define MSG_DEFAULT 1
+#define MSG_HALT 2
+
 #define SIZE_OF_MSG 2
 
-#define CARRIERS_NUM 10
+typedef struct message {
+	int message_type;
+	int content[SIZE_OF_MSG];
+} message;
+
 
 #endif
