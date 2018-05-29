@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include <stdio.h>
-
 
 static scalar_clock_t process_clock;
 static int process_rank;
@@ -99,7 +97,7 @@ static void send_message(int receiver, message msg) {
 	MPI_Send(&pckt, 1, packet_type, receiver, MSG_DEFAULT, MPI_COMM_WORLD);
 }
 
-static void broadcast_lock(int sem_id, int lock_clock) {
+static void broadcast_lock(int sem_id, scalar_clock_t lock_clock) {
 
 	message msg;
 	msg.message_type = MSG_LOCK;
@@ -114,15 +112,17 @@ static void broadcast_lock(int sem_id, int lock_clock) {
 	}
 }
 
-static void allow_enter(int target) {
+static void allow_enter(int target, int sem_id, scalar_clock_t lock_clock) {
 
 	message msg;
 	msg.message_type = MSG_ALLOW;
+	msg.content[0] = sem_id;
+	msg.content[1] = lock_clock;
 
 	send_message(target, msg);
 }
 
-static int is_request_prior(int req_sem_id, int req_lock_clock, int sender) {
+static int is_request_prior(int req_sem_id, scalar_clock_t req_lock_clock, int sender) {
 
 	if (sems[req_sem_id].locked == 0)
 		return 1;
@@ -148,7 +148,7 @@ static void handle_request(message msg, int sender) {
 	scalar_clock_t req_lock_clock = msg.content[1];
 
 	if (is_request_prior(req_sem_id, req_lock_clock, sender))
-		allow_enter(sender);
+		allow_enter(sender, req_sem_id, req_lock_clock);
 	else
 		list_append(&sems[req_lock_clock].awaiting, sender, req_lock_clock);
 }
@@ -190,15 +190,8 @@ static void allow_awaiting(int sem_id) {
 
 	list_element* it = sems[sem_id].awaiting.head;
 
-	while (it != NULL) {
-
-		message msg;
-		msg.message_type = MSG_ALLOW;
-		msg.content[0] = sem_id;
-		msg.content[1] = it->lock_clock;
-
-		send_message(it->process_rank, msg);
-	}
+	while (it != NULL)
+		allow_enter(it->process_rank, sem_id, it->lock_clock);
 
 	clear_list(&sems[sem_id].awaiting);
 }
@@ -224,8 +217,6 @@ void monitor_synchronize(void) {
 		packet pckt = receive_packet();
 		message msg = pckt.data;
 		int sender = pckt.sender;
-
-		printf("Process %d received message from %d with message type: %d\n", process_rank, sender, msg.message_type);
 
 		handle_request(msg, sender);
 	}
