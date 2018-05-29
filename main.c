@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <time.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "monitor.h"
 #include "common.h"
@@ -19,22 +22,6 @@ typedef long long millis_t;
 
 static int plane_no;
 
-void init_semaphores(void) {
-
-	int parking_spaces[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
-	int k[CARRIERS_NUM * 2];
-
-	int i;
-	for (i = 0; i < CARRIERS_NUM * 2; ++i) {
-
-		if (i < CARRIERS_NUM)
-			k[i] = parking_spaces[i];
-		else
-			k[i] = 1;
-	}
-
-	initialize_semaphores(CARRIERS_NUM * 2, k);
-}
 
 millis_t get_millis(void) {
 
@@ -45,7 +32,7 @@ millis_t get_millis(void) {
 }
 
 millis_t random_millis(void) {
-	return IDLE_FROM_MILLIS + rand() % (RANDOM_TO_MILLIS - RANDOM_FROM_MILLIS);	
+	return IDLE_FROM_MILLIS + rand() % (IDLE_TO_MILLIS - IDLE_FROM_MILLIS);	
 }
 
 int choose_carrier(void) {
@@ -108,7 +95,7 @@ void plane_starting(int carrier_no) {
 
 	idle_state(random_millis() / 2);
 
-	unlock_semaphore(carrier_no + CARRIERS_NUM); // unlock runway
+	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 	unlock_semaphore(carrier_no); // unlock place
 }
 
@@ -127,6 +114,20 @@ void simulation(void) {
 
 void signal_handler(int signo) {
 	monitor_cleanup();
+}
+
+void init_semaphores(void) {
+
+	int parking_spaces[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
+	int k[CARRIERS_NUM * 2];
+
+	int i;
+	for (i = 0; i < CARRIERS_NUM; ++i) {
+		k[i] = parking_spaces[i];
+		k[runway_no(i)] = 1;
+	}
+
+	initialize_semaphores(CARRIERS_NUM * 2, k);
 }
 
 void init_environment() {
@@ -148,7 +149,7 @@ int main(int argc, char** argv) {
 	monitor_init(&argc, &argv);
 	init_environment();
 
-	simulation():
+	simulation();
 
 	monitor_cleanup();
 

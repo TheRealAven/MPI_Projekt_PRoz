@@ -101,7 +101,7 @@ static void send_message(int receiver, message msg) {
 
 static void broadcast_lock(int sem_id) {
 
-
+	// Todo
 }
 
 void lock_semaphore(int sem_id) {
@@ -134,6 +134,11 @@ void unlock_semaphore(int sem_id) {
 
 	sems[sem_id].locked = 0;
 	allow_awaiting(sem_id);
+}
+
+void monitor_synchronize(void) {
+
+	// Todo
 }
 
 void monitor_cleanup(void) {

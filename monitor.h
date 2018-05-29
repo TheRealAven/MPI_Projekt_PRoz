@@ -29,7 +29,7 @@ void initialize_semaphores(int num, int* k);
 void lock_semaphore(int sem_id);
 void unlock_semaphore(int sem_id);
 
-void synchronize(void);
+void monitor_synchronize(void);
 
 void monitor_cleanup(void);
 
