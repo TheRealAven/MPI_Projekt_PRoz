@@ -2,7 +2,7 @@
 #define __LIST_HEADER
 
 
-typedef unsigned long long scalar_clock_t;
+typedef int scalar_clock_t;
 
 typedef struct list_element {
 	int process_rank;
@@ -16,7 +16,7 @@ typedef struct list {
 } list;
 
 
-list empty_list(void);
+list* empty_list(void);
 
 void list_append(list* lst, int process_rank, scalar_clock_t lock_clock);
 

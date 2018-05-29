@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#include <stdio.h>
+
 
 static scalar_clock_t process_clock;
 static int process_rank;
@@ -29,7 +31,7 @@ void monitor_init(int* argc, char*** argv) {
 	sems = NULL;
 	sems_no = 0;
 
-	process_clock = 0;
+	process_clock = 1;
 
 	MPI_Init(argc, argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
@@ -44,7 +46,8 @@ static void clean_semaphores() {
 	for (i = 0; i < sems_no; ++i) {
 		semaphore* sem = &sems[i];
 
-		clear_list(&sem->awaiting);
+		clear_list(sem->awaiting);
+		free(sem->awaiting);
 	}
 
 	free(sems);
@@ -97,7 +100,7 @@ static void send_message(int receiver, message msg) {
 	MPI_Send(&pckt, 1, packet_type, receiver, MSG_DEFAULT, MPI_COMM_WORLD);
 }
 
-static void broadcast_lock(int sem_id, scalar_clock_t lock_clock) {
+static void broadcast_lock(int sem_id, int lock_clock) {
 
 	message msg;
 	msg.message_type = MSG_LOCK;
@@ -150,7 +153,7 @@ static void handle_request(message msg, int sender) {
 	if (is_request_prior(req_sem_id, req_lock_clock, sender))
 		allow_enter(sender, req_sem_id, req_lock_clock);
 	else
-		list_append(&sems[req_lock_clock].awaiting, sender, req_lock_clock);
+		list_append(sems[req_lock_clock].awaiting, sender, req_lock_clock);
 }
 
 static void wait_for_approval(int locked_sem_id) {
@@ -188,16 +191,20 @@ void lock_semaphore(int sem_id) {
 
 static void allow_awaiting(int sem_id) {
 
-	list_element* it = sems[sem_id].awaiting.head;
+	list_element* it = sems[sem_id].awaiting->head;
 
-	while (it != NULL)
+	while (it != NULL) {
+
 		allow_enter(it->process_rank, sem_id, it->lock_clock);
+		it = it->next;
+	}
 
-	clear_list(&sems[sem_id].awaiting);
+	clear_list(sems[sem_id].awaiting);
 }
 
 void unlock_semaphore(int sem_id) {
 
+	process_clock = process_clock + 1;
 	sems[sem_id].locked = 0;
 	sems[sem_id].confirmed = 0;
 	allow_awaiting(sem_id);

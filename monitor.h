@@ -7,7 +7,7 @@
 
 #define MPI_CLOCK_TYPE MPI_UNSIGNED_LONG_LONG
 
-typedef unsigned long long scalar_clock_t;
+typedef int scalar_clock_t;
 
 typedef struct packet {
 	scalar_clock_t clock;
@@ -17,7 +17,7 @@ typedef struct packet {
 
 typedef struct semaphore {
 	int k;
-	list awaiting;
+	list* awaiting;
 	int locked;
 	int confirmed;
 

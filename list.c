@@ -2,11 +2,11 @@
 
 #include <stdlib.h>
 
-list empty_list(void) {
-	list lst;
+list* empty_list(void) {
+	list* lst = malloc(sizeof(list));
 
-	lst.head = NULL;
-	lst.tail = &lst.head;
+	lst->head = NULL;
+	lst->tail = &lst->head;
 
 	return lst;
 }
@@ -33,6 +33,7 @@ void clear_list(list* lst) {
 		element = next;
 	}
 
+	lst->head = NULL;
 	lst->tail = &(lst->head);
 }
 
