@@ -9,7 +9,6 @@
 
 typedef unsigned long long scalar_clock_t;
 
-
 typedef struct packet {
 	scalar_clock_t clock;
 	int sender;
@@ -27,11 +26,10 @@ typedef struct semaphore {
 void monitor_init(int* argc, char*** argv);
 void initialize_semaphores(int num, int* k);
 
-message receive_message(void);
-void send_message(int receiver, message msg);
-
 void lock_semaphore(int sem_id);
 void unlock_semaphore(int sem_id);
+
+void synchronize(void);
 
 void monitor_cleanup(void);
 

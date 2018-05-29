@@ -6,7 +6,6 @@
 // Todo remove this include after debug
 #include <stdio.h>
 
-#define MSG_DEFAULT 1
 
 static scalar_clock_t process_clock;
 static int process_rank;
@@ -71,9 +70,7 @@ void initialize_semaphores(int num, int* k) {
 	}
 }
 
-// Todo change this method to static
-// Interface depreciated
-message receive_message(void) {
+static message receive_message(void) {
 
 	MPI_Status status;
 	packet pckt;
@@ -88,7 +85,7 @@ message receive_message(void) {
 	return pckt.data;
 }
 
-void send_message(int receiver, message msg) {
+static void send_message(int receiver, message msg) {
 
 	process_clock = process_clock + 1;
 
