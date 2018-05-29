@@ -63,9 +63,7 @@ void plane_flying(void) {
 
 	printf("Plane %d is now flying...\n", plane_no);
 
-	idle_state(random_millis() * 4);
-
-	printf("Plane %d is going to land now.\n", plane_no);
+	idle_state(random_millis() * 2);
 }
 
 int plane_landing(void) {
@@ -77,26 +75,36 @@ int plane_landing(void) {
 	lock_semaphore(carrier_no); // lock place
 	lock_semaphore(runway_no(carrier_no)); // lock runway
 
+	printf("Plane %d is landing...\n", plane_no);
 	idle_state(random_millis() / 5);
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 
+	printf("Plane %d landed on carrier no %d.\n", plane_no, carrier_no);
+
 	return carrier_no;
 }
 
-void plane_standing(void) {
+void plane_standing(int carrier_no) {
 
+	printf("Plane %d is now standing on the carrier no %d.\n", plane_no, carrier_no);
 	idle_state(random_millis());
 }
 
 void plane_starting(int carrier_no) {
 
+	printf("Plane %d is going to set off...\n", plane_no);
+
 	lock_semaphore(runway_no(carrier_no)); // lock_runway 
+
+	printf("Plane %d is accelerating and rising into the air...\n", plane_no);
 
 	idle_state(random_millis() / 2);
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 	unlock_semaphore(carrier_no); // unlock place
+
+	printf("Plane %d left carrier no %d.\n", plane_no, carrier_no);
 }
 
 void simulation(void) {
@@ -107,7 +115,7 @@ void simulation(void) {
 
 		int carrier_no = plane_landing();
 
-		plane_standing();
+		plane_standing(carrier_no);
 		plane_starting(carrier_no);
 	}
 }
@@ -134,10 +142,10 @@ void init_environment() {
 
 	init_semaphores();
 
-	srand(time(0));
-
-	MPI_Comm_size(MPI_COMM_WORLD, &plane_no);
+	MPI_Comm_rank(MPI_COMM_WORLD, &plane_no);
 	plane_no = plane_no + 1;
+
+	srand(time(0) * plane_no);
 
 	signal(SIGINT, signal_handler);
 	signal(SIGABRT, signal_handler);

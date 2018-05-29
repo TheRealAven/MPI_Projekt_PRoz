@@ -19,6 +19,7 @@ typedef struct semaphore {
 	int k;
 	list awaiting;
 	int locked;
+	int confirmed;
 
 } semaphore;
 

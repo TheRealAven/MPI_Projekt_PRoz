@@ -18,7 +18,7 @@ typedef struct list {
 
 list empty_list(void);
 
-void add(list* lst, int process_rank, scalar_clock_t lock_clock);
+void list_append(list* lst, int process_rank, scalar_clock_t lock_clock);
 
 void clear_list(list* lst);
 

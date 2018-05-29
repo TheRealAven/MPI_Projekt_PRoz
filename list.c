@@ -11,7 +11,7 @@ list empty_list(void) {
 	return lst;
 }
 
-void add(list* lst, int process_rank, scalar_clock_t lock_clock) {
+void list_append(list* lst, int process_rank, scalar_clock_t lock_clock) {
 
 	(*lst->tail) = malloc(sizeof(list_element));
 

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-// Todo remove this include after debug
 #include <stdio.h>
 
 
@@ -29,16 +28,16 @@ static void init_structures(void) {
 
 void monitor_init(int* argc, char*** argv) {
 
+	sems = NULL;
+	sems_no = 0;
+
+	process_clock = 0;
+
 	MPI_Init(argc, argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &process_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &processes_num);
 
 	init_structures();
-
-	sems = NULL;
-	sems_no = 0;
-
-	process_clock = 0;
 }
 
 static void clean_semaphores() {
@@ -67,10 +66,11 @@ void initialize_semaphores(int num, int* k) {
 		sems[i].k = k[i];
 		sems[i].awaiting = empty_list();
 		sems[i].locked = 0;
+		sems[i].confirmed = 0;
 	}
 }
 
-static message receive_message(void) {
+static packet receive_packet(void) {
 
 	MPI_Status status;
 	packet pckt;
@@ -82,7 +82,7 @@ static message receive_message(void) {
 
 	process_clock = process_clock + 1;
 
-	return pckt.data;
+	return pckt;
 }
 
 static void send_message(int receiver, message msg) {
@@ -99,9 +99,80 @@ static void send_message(int receiver, message msg) {
 	MPI_Send(&pckt, 1, packet_type, receiver, MSG_DEFAULT, MPI_COMM_WORLD);
 }
 
-static void broadcast_lock(int sem_id) {
+static void broadcast_lock(int sem_id, int lock_clock) {
 
-	// Todo
+	message msg;
+	msg.message_type = MSG_LOCK;
+	msg.content[0] = sem_id;
+	msg.content[1] = lock_clock;
+
+	int i;
+	for (i = 0; i < processes_num; ++i) {
+
+		if (i != process_rank)
+			send_message(i, msg);
+	}
+}
+
+static void allow_enter(int target) {
+
+	message msg;
+	msg.message_type = MSG_ALLOW;
+
+	send_message(target, msg);
+}
+
+static int is_request_prior(int req_sem_id, int req_lock_clock, int sender) {
+
+	if (sems[req_sem_id].locked == 0)
+		return 1;
+
+	if (sems[req_sem_id].confirmed == 1)
+		return 0;
+
+	if (sems[req_sem_id].locked < req_lock_clock)
+		return 0;
+
+	if (sems[req_sem_id].locked == req_lock_clock && process_rank < sender)
+		return 0;
+
+	return 1;
+}
+
+static void handle_request(message msg, int sender) {
+
+	if (msg.message_type != MSG_LOCK)
+		return;
+
+	int req_sem_id = msg.content[0];
+	scalar_clock_t req_lock_clock = msg.content[1];
+
+	if (is_request_prior(req_sem_id, req_lock_clock, sender))
+		allow_enter(sender);
+	else
+		list_append(&sems[req_lock_clock].awaiting, sender, req_lock_clock);
+}
+
+static void wait_for_approval(int locked_sem_id) {
+	
+	int approvals = 0;
+
+	while (approvals < processes_num - sems[locked_sem_id].k) {
+
+		packet pckt = receive_packet();
+		message msg = pckt.data;
+
+		if (msg.message_type == MSG_ALLOW) {
+
+			int sem_id = msg.content[0];
+			scalar_clock_t lock_clock = msg.content[1];
+
+			if (sem_id == locked_sem_id && sems[locked_sem_id].locked == lock_clock)
+				approvals = approvals + 1;
+		}
+		else
+			handle_request(msg, pckt.sender);
+	}
 }
 
 void lock_semaphore(int sem_id) {
@@ -109,10 +180,10 @@ void lock_semaphore(int sem_id) {
 	process_clock = process_clock + 1;
 	sems[sem_id].locked = process_clock;
 
-	message msg;
-	msg.message_type = MSG_LOCK;
-	msg.content[0] = sem_id;
-	msg.content[1] = process_clock;
+	broadcast_lock(sem_id, process_clock);
+	wait_for_approval(sem_id);
+
+	sems[sem_id].confirmed = 1;
 }
 
 static void allow_awaiting(int sem_id) {
@@ -128,17 +199,36 @@ static void allow_awaiting(int sem_id) {
 
 		send_message(it->process_rank, msg);
 	}
+
+	clear_list(&sems[sem_id].awaiting);
 }
 
 void unlock_semaphore(int sem_id) {
 
 	sems[sem_id].locked = 0;
+	sems[sem_id].confirmed = 0;
 	allow_awaiting(sem_id);
 }
 
 void monitor_synchronize(void) {
 
-	// Todo
+	MPI_Status status;
+	int flag;
+
+	while (1) {
+		MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+
+		if (flag == 0)
+			break;
+
+		packet pckt = receive_packet();
+		message msg = pckt.data;
+		int sender = pckt.sender;
+
+		printf("Process %d received message from %d with message type: %d\n", process_rank, sender, msg.message_type);
+
+		handle_request(msg, sender);
+	}
 }
 
 void monitor_cleanup(void) {
