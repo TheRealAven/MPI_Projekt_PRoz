@@ -75,7 +75,7 @@ int plane_landing(void) {
 	lock_semaphore(carrier_no); // lock place
 	lock_semaphore(runway_no(carrier_no)); // lock runway
 
-	printf("Plane %d is landing...\n", plane_no);
+	printf("Plane %d (at %d) is landing...\n", plane_no, carrier_no);
 	idle_state(random_millis() / 5);
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
@@ -93,13 +93,15 @@ void plane_standing(int carrier_no) {
 
 void plane_starting(int carrier_no) {
 
-	printf("Plane %d is going to set off...\n", plane_no);
+	printf("Plane %d (at %d) is going to set off...\n", plane_no, carrier_no);
 
 	lock_semaphore(runway_no(carrier_no)); // lock_runway 
 
-	printf("Plane %d is accelerating and rising into the air...\n", plane_no);
+	printf("Plane %d (at %d) is accelerating and rising into the air...\n", plane_no, carrier_no);
 
 	idle_state(random_millis() / 2);
+
+	printf("Plane %d is notifying that the runway is free...\n", plane_no);
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 	unlock_semaphore(carrier_no); // unlock place

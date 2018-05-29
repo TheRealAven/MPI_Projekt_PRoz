@@ -170,8 +170,13 @@ static void wait_for_approval(int locked_sem_id) {
 			int sem_id = msg.content[0];
 			scalar_clock_t lock_clock = msg.content[1];
 
-			if (sem_id == locked_sem_id && sems[locked_sem_id].locked == lock_clock)
+			if (sem_id == locked_sem_id && sems[locked_sem_id].locked == lock_clock) {
+
 				approvals = approvals + 1;
+
+				printf("Process %d received approval from %d (on semaphore %d) and needs %d more.\n",
+						process_rank, pckt.sender, sem_id, processes_num - sems[sem_id].k - approvals);
+			}
 		}
 		else
 			handle_request(msg, pckt.sender);
