@@ -6,6 +6,7 @@
 
 #include "monitor.h"
 #include "common.h"
+#include "termutils.h"
 
 #define IDLE_FROM_MILLIS 1000
 #define IDLE_TO_MILLIS 10000
@@ -78,7 +79,7 @@ int plane_landing(void) {
 	lock_semaphore(carrier_no); // lock place
 	lock_semaphore(runway_no(carrier_no)); // lock runway
 
-	printf("Plane %d (at %d) is landing...\n", plane_no, carrier_no);
+	printf(ANSI_COLOR_RED "Plane " ANSI_COLOR_BLUE "%d" ANSI_COLOR_RED "(at " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RED ") is landing..." ANSI_COLOR_RESET "\n", plane_no, carrier_no);
 	idle_state(random_millis() / 5);
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
@@ -104,12 +105,10 @@ void plane_starting(int carrier_no) {
 
 	idle_state(random_millis() / 2);
 
-	printf("Plane %d is notifying that the runway is free...\n", plane_no);
-
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 	unlock_semaphore(carrier_no); // unlock place
 
-	printf("Plane %d left carrier no %d.\n", plane_no, carrier_no);
+	printf(ANSI_COLOR_GREEN "Plane " ANSI_COLOR_BLUE "%d" ANSI_COLOR_GREEN " left carrier no " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RESET ".\n", plane_no, carrier_no);
 }
 
 void simulation(void) {
