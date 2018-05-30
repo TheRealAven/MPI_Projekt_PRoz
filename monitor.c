@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-// #define DEBUG
+#define DEBUG
+// #define DEBUG_ALL
+// #define DEBUG_AGREEMENTS
 
 #ifdef DEBUG
 
@@ -159,7 +161,7 @@ static void handle_request(message msg, int sender) {
 
 		allow_enter(sender, req_sem_id, req_lock_clock);
 
-#ifdef DEBUG
+#if defined(DEBUG_ALL) || defined(DEBUG_AGREEMENTS)
 		printf("Process %d (locked: %d) allowed %d (locked: %d) to enter semaphore\n", process_rank, sems[req_sem_id].locked, sender, req_lock_clock, req_sem_id);
 #endif
 	}
@@ -186,7 +188,7 @@ static void wait_for_approval(int locked_sem_id) {
 
 				approvals = approvals + 1;
 
-#ifdef DEBUG
+#ifdef DEBUG_ALL
 				printf("Process %d received approval from %d (on semaphore %d) and needs %d more.\n",
 						process_rank, pckt.sender, sem_id, processes_num - sems[sem_id].k - approvals);
 #endif
@@ -244,7 +246,7 @@ void monitor_synchronize(void) {
 		message msg = pckt.data;
 		int sender = pckt.sender;
 
-#ifdef DEBUG		
+#ifdef DEBUG_ALL	
 		printf("Process %d received message from %d during synchronization (message type: %d)\n", process_rank, sender, msg.message_type);
 #endif
 

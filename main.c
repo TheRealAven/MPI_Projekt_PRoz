@@ -21,7 +21,7 @@ typedef long long millis_t;
 #define CARRIERS_NUM 1
 
 // static int PARKING_SPACES[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
-static int PARKING_SPACES[CARRIERS_NUM] = {3};
+static int PARKING_SPACES[CARRIERS_NUM] = {2};
 
 
 static int plane_no;
