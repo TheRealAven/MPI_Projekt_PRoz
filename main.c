@@ -7,9 +7,6 @@
 #include "monitor.h"
 #include "common.h"
 
-
-#define CARRIERS_NUM 10
-
 #define IDLE_FROM_MILLIS 1000
 #define IDLE_TO_MILLIS 10000
 
@@ -18,6 +15,12 @@
 
 
 typedef long long millis_t;
+
+// #define CARRIERS_NUM 10
+#define CARRIERS_NUM 1
+
+// static int PARKING_SPACES[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
+static int PARKING_SPACES[CARRIERS_NUM] = {3};
 
 
 static int plane_no;
@@ -128,12 +131,11 @@ void signal_handler(int signo) {
 
 void init_semaphores(void) {
 
-	int parking_spaces[CARRIERS_NUM] = {3, 5, 1, 6, 2, 3, 2, 4, 7, 8};
 	int k[CARRIERS_NUM * 2];
 
 	int i;
 	for (i = 0; i < CARRIERS_NUM; ++i) {
-		k[i] = parking_spaces[i];
+		k[i] = PARKING_SPACES[i];
 		k[runway_no(i)] = 1;
 	}
 

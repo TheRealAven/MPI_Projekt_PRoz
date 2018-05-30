@@ -3,8 +3,13 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+// #define DEBUG
+
+#ifdef DEBUG
+
 #include <stdio.h>
 
+#endif // DEBUG
 
 static scalar_clock_t process_clock;
 static int process_rank;
@@ -150,10 +155,17 @@ static void handle_request(message msg, int sender) {
 	int req_sem_id = msg.content[0];
 	scalar_clock_t req_lock_clock = msg.content[1];
 
-	if (is_request_prior(req_sem_id, req_lock_clock, sender))
+	if (is_request_prior(req_sem_id, req_lock_clock, sender)) {
+
 		allow_enter(sender, req_sem_id, req_lock_clock);
-	else
-		list_append(sems[req_lock_clock].awaiting, sender, req_lock_clock);
+
+#ifdef DEBUG
+		printf("Process %d (locked: %d) allowed %d (locked: %d) to enter semaphore\n", process_rank, sems[req_sem_id].locked, sender, req_lock_clock, req_sem_id);
+#endif
+	}
+	else {
+		list_append(sems[req_sem_id].awaiting, sender, req_lock_clock);
+	}
 }
 
 static void wait_for_approval(int locked_sem_id) {
@@ -174,8 +186,10 @@ static void wait_for_approval(int locked_sem_id) {
 
 				approvals = approvals + 1;
 
+#ifdef DEBUG
 				printf("Process %d received approval from %d (on semaphore %d) and needs %d more.\n",
 						process_rank, pckt.sender, sem_id, processes_num - sems[sem_id].k - approvals);
+#endif
 			}
 		}
 		else
@@ -229,6 +243,10 @@ void monitor_synchronize(void) {
 		packet pckt = receive_packet();
 		message msg = pckt.data;
 		int sender = pckt.sender;
+
+#ifdef DEBUG		
+		printf("Process %d received message from %d during synchronization (message type: %d)\n", process_rank, sender, msg.message_type);
+#endif
 
 		handle_request(msg, sender);
 	}

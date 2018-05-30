@@ -14,5 +14,4 @@ typedef struct message {
 	int content[SIZE_OF_MSG];
 } message;
 
-
 #endif
