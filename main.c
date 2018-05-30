@@ -65,7 +65,7 @@ void idle_state(millis_t idle_time) {
 
 void plane_flying(void) {
 
-	printf("Plane %d is now flying...\n", plane_no);
+	printf("Plane %d is now flying... [time: %d]\n", plane_no, get_scalar_clock());
 
 	idle_state(random_millis() * 2);
 }
@@ -74,41 +74,52 @@ int plane_landing(void) {
 
 	int carrier_no = choose_carrier();
 
-	printf("Plane %d is trying to land on carrier %d.\n", plane_no, carrier_no);
+	printf("Plane %d is trying to land on carrier %d. [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
 	lock_semaphore(carrier_no); // lock place
+	
+	printf(ANSI_COLOR_RED "Plane " ANSI_COLOR_RESET "%d" ANSI_COLOR_RED "(at " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RED ") is landing..." ANSI_COLOR_RESET "[time: %d]\n", plane_no, carrier_no, get_scalar_clock());
+
 	lock_semaphore(runway_no(carrier_no)); // lock runway
 
-	printf(ANSI_COLOR_RED "Plane " ANSI_COLOR_BLUE "%d" ANSI_COLOR_RED "(at " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RED ") is landing..." ANSI_COLOR_RESET "\n", plane_no, carrier_no);
+	printf(ANSI_COLOR_YELLOW "Plane " ANSI_COLOR_RESET "%d" ANSI_COLOR_YELLOW " is on the runway (carrier: " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_YELLOW ")" ANSI_COLOR_RESET "[time: %d]\n", plane_no, carrier_no, get_scalar_clock());
+
+
 	idle_state(random_millis() / 5);
+
+	printf(ANSI_COLOR_CYAN "Plane " ANSI_COLOR_RESET "%d" ANSI_COLOR_CYAN " is leaving the runway (carrier: " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_CYAN ")" ANSI_COLOR_RESET "[time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
 	unlock_semaphore(runway_no(carrier_no)); // unlock runway
 
-	printf("Plane %d landed on carrier no %d.\n", plane_no, carrier_no);
+	printf("Plane %d landed on carrier no %d. [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
 	return carrier_no;
 }
 
 void plane_standing(int carrier_no) {
 
-	printf("Plane %d is now standing on the carrier no %d.\n", plane_no, carrier_no);
+	printf("Plane %d is now standing on the carrier no %d. [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 	idle_state(random_millis());
 }
 
 void plane_starting(int carrier_no) {
 
-	printf("Plane %d (at %d) is going to set off...\n", plane_no, carrier_no);
+	printf("Plane %d (at %d) is going to set off... [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
-	lock_semaphore(runway_no(carrier_no)); // lock_runway 
+	lock_semaphore(runway_no(carrier_no)); // lock_runway
+	printf(ANSI_COLOR_YELLOW "Plane " ANSI_COLOR_RESET "%d" ANSI_COLOR_YELLOW " is on the runway (carrier: " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_YELLOW ")" ANSI_COLOR_RESET " [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
-	printf("Plane %d (at %d) is accelerating and rising into the air...\n", plane_no, carrier_no);
+	printf("Plane %d (at carrier %d) is accelerating and rising into the air... [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
 	idle_state(random_millis() / 2);
 
-	unlock_semaphore(runway_no(carrier_no)); // unlock runway
-	unlock_semaphore(carrier_no); // unlock place
+	printf(ANSI_COLOR_CYAN "Plane " ANSI_COLOR_RESET "%d" ANSI_COLOR_CYAN " is leaving the runway (carrier: " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_CYAN ")" ANSI_COLOR_RESET " [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
 
-	printf(ANSI_COLOR_GREEN "Plane " ANSI_COLOR_BLUE "%d" ANSI_COLOR_GREEN " left carrier no " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RESET ".\n", plane_no, carrier_no);
+	unlock_semaphore(runway_no(carrier_no)); // unlock runway
+	
+	printf(ANSI_COLOR_GREEN "Plane " ANSI_COLOR_BLUE "%d" ANSI_COLOR_GREEN " left carrier no " ANSI_COLOR_MAGENTA "%d" ANSI_COLOR_RESET ". [time: %d]\n", plane_no, carrier_no, get_scalar_clock());
+
+	unlock_semaphore(carrier_no); // unlock place
 }
 
 void simulation(void) {

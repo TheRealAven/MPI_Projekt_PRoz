@@ -31,6 +31,7 @@ void lock_semaphore(int sem_id);
 void unlock_semaphore(int sem_id);
 
 void monitor_synchronize(void);
+scalar_clock_t get_scalar_clock(void);
 
 void monitor_cleanup(void);
 

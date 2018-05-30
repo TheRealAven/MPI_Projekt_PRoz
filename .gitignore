@@ -2,3 +2,4 @@ mpi_project
 main
 a.out
 log*.txt
+mpi_hosts

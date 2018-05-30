@@ -24,6 +24,10 @@ static semaphore* sems;
 static int sems_no;
 
 
+scalar_clock_t get_scalar_clock(void) {
+	return process_clock;
+}
+
 static void init_message_structure(void);
 static void init_packet_structure(void);
 
